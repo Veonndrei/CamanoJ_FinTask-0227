@@ -9,9 +9,13 @@ public class CoinCollector : MonoBehaviour
     public TextMeshProUGUI coinText;
     public AudioSource collectSound;
 
+    private LevelTimer levelTimer;   // NEW
+
     private void Start()
     {
         UpdateCoinUI();
+
+        levelTimer = FindObjectOfType<LevelTimer>();  // NEW
     }
 
     private void OnTriggerEnter(Collider other)
@@ -22,6 +26,9 @@ public class CoinCollector : MonoBehaviour
 
             if (collectSound != null)
                 collectSound.Play();
+
+            if (levelTimer != null)       // NEW
+                levelTimer.AddCoin();     // NEW
 
             Destroy(other.gameObject);
             UpdateCoinUI();

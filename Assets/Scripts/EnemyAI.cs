@@ -74,7 +74,8 @@ public class EnemyAi : MonoBehaviour
 
     private void Patrolling()
     {
-
+        // IMPORTANT: if we previously attacked, the agent was stopped.
+        agent.isStopped = false;
         agent.updateRotation = true;
 
         if (!walkPointSet)
@@ -83,7 +84,6 @@ public class EnemyAi : MonoBehaviour
         if (walkPointSet)
             agent.SetDestination(walkPoint);
 
-        // Walkpoint reached
         if (walkPointSet && Vector3.Distance(transform.position, walkPoint) < 1f)
             walkPointSet = false;
     }
@@ -119,6 +119,12 @@ public class EnemyAi : MonoBehaviour
         agent.SetDestination(player.position);
     }
 
+    private Vector3 GetAimPoint()
+    {
+        // Aim at the player's chest instead of feet
+        return player.position + Vector3.up * 1.0f;
+    }
+
     private void AttackPlayer()
     {
         float dist = Vector3.Distance(transform.position, player.position);
@@ -129,34 +135,34 @@ public class EnemyAi : MonoBehaviour
             return;
         }
 
-        // Stop moving
+        // Stop moving and stop navmesh from rotating us
         agent.isStopped = true;
-
-        // We control rotation manually while attacking
         agent.updateRotation = false;
+        agent.velocity = Vector3.zero;
 
-        // Smoothly rotate toward player (Y-axis only)
-        Vector3 dir = (player.position - transform.position);
+        // Rotate toward player (Y only)
+        Vector3 dir = GetAimPoint() - transform.position;
         dir.y = 0f;
 
         if (dir.sqrMagnitude > 0.001f)
         {
             Quaternion targetRot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation,
+                targetRot,
+                turnSpeed * 100f * Time.deltaTime
+            );
         }
 
-        // Shoot only if facing enough (prevents shooting sideways)
+        // Only shoot when accurately facing the player
         float angle = Vector3.Angle(transform.forward, dir.normalized);
 
-        if (!alreadyAttacked && angle < 10f) // 10 degrees tolerance
+        if (!alreadyAttacked && angle < 3f)
         {
             if (projectile != null)
             {
-                GameObject projObj = Instantiate(
-                    projectile,
-                    transform.position + transform.forward * 1f + Vector3.up * 1f,
-                    Quaternion.identity
-                );
+                Vector3 spawnPos = transform.position + transform.forward * 1f + Vector3.up * 1f;
+                GameObject projObj = Instantiate(projectile, spawnPos, Quaternion.identity);
 
                 Rigidbody rb = projObj.GetComponent<Rigidbody>();
                 if (rb != null)
