@@ -163,6 +163,15 @@ public class LevelTimer : MonoBehaviour
         if (nextScene < SceneManager.sceneCountInBuildSettings)
             SceneManager.LoadScene(nextScene);
     }
+
+    public void MainMenu()
+    {
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        SceneManager.LoadScene("MainMenu");
+    }
+
     void Lose()
     {
         gameEnded = true;
